@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'home_page.dart'; // your existing home page file
+import 'main.dart'; // your existing home page file
 
 // ─────────────────────────────────────────────────────────────
 // Entry point — swap main() here OR in home_page.dart, not both

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
 void main() {
-  runApp(const ReaderSHavenApp());
+  runApp(const ReadersHaven());
 }
 
-class ReaderSHavenApp extends StatelessWidget {
-  const ReaderSHavenApp({super.key});
+class ReadersHaven extends StatelessWidget {
+  const ReadersHaven({super.key});
 
   @override
   Widget build(BuildContext context) {
