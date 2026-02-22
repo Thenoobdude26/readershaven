@@ -5,16 +5,16 @@ import 'main.dart'; // your existing home page file
 // Entry point — swap main() here OR in home_page.dart, not both
 // ─────────────────────────────────────────────────────────────
 void main() {
-  runApp(const ReaderSHavenApp());
+  runApp(const ReadersHaven());
 }
 
-class ReaderSHavenApp extends StatelessWidget {
-  const ReaderSHavenApp({super.key});
+class ReadersHaven extends StatelessWidget {
+  const ReadersHaven({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'ReaderSHaven',
+      title: 'ReadersHaven',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
@@ -216,7 +216,7 @@ class _LoginSignupPageState extends State<LoginSignupPage>
         ),
         const SizedBox(height: 14),
         const Text(
-          "ReaderSHaven",
+          "ReadersHaven",
           style: TextStyle(
             color: Colors.white,
             fontSize: 26,

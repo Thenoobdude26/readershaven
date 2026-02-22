@@ -148,7 +148,7 @@ class _HomePageState extends State<HomePage> {
             const Icon(Icons.menu_book_rounded, size: 22),
             const SizedBox(width: 8),
             const Text(
-              "ReaderSHaven",
+              "ReadersHaven",
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 20,
