@@ -1,34 +1,8 @@
 import 'package:flutter/material.dart';
-import 'main.dart'; // your existing home page file
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'main.dart'; // for HomePage
 
-// ─────────────────────────────────────────────────────────────
-// Entry point — swap main() here OR in home_page.dart, not both
-// ─────────────────────────────────────────────────────────────
-void main() {
-  runApp(const ReadersHaven());
-}
-
-class ReadersHaven extends StatelessWidget {
-  const ReadersHaven({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'ReadersHaven',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF6B4226),
-          brightness: Brightness.light,
-        ),
-        useMaterial3: true,
-        fontFamily: 'Georgia',
-      ),
-      // Start at the login/signup screen
-      home: const LoginSignupPage(),
-    );
-  }
-}
+final supabase = Supabase.instance.client;
 
 // ─────────────────────────────────────────────────────────────
 // Login / Sign-up Page
@@ -43,13 +17,9 @@ class LoginSignupPage extends StatefulWidget {
 
 class _LoginSignupPageState extends State<LoginSignupPage>
     with SingleTickerProviderStateMixin {
-  // Toggle between Login and Sign-up forms
   bool _isLogin = true;
 
-  // Form key for basic validation
   final _formKey = GlobalKey<FormState>();
-
-  // Controllers
   final _emailCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
   final _usernameCtrl = TextEditingController();
@@ -87,28 +57,60 @@ class _LoginSignupPageState extends State<LoginSignupPage>
     _fadeCtrl.forward(from: 0);
   }
 
-  Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    setState(() => _isLoading = true);
-
-    // Simulate network call — replace with real auth logic
-    await Future.delayed(const Duration(seconds: 1));
-
+  // ── Show a snackbar for errors ──
+  void _showError(String message) {
     if (!mounted) return;
-    setState(() => _isLoading = false);
-
-    // Navigate to Home, removing login from back stack
-    Navigator.of(context).pushReplacement(
-      PageRouteBuilder(
-        pageBuilder: (_, animation, _) => const HomePage(),
-        transitionsBuilder: (_, animation, _, child) => FadeTransition(
-          opacity: animation,
-          child: child,
-        ),
-        transitionDuration: const Duration(milliseconds: 500),
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.redAccent,
+        behavior: SnackBarBehavior.floating,
       ),
     );
+  }
+
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _isLoading = true);
+
+    try {
+      if (_isLogin) {
+        // ── Sign in ──
+        await supabase.auth.signInWithPassword(
+          email: _emailCtrl.text.trim(),
+          password: _passwordCtrl.text,
+        );
+      } else {
+        // ── Sign up ──
+        final response = await supabase.auth.signUp(
+          email: _emailCtrl.text.trim(),
+          password: _passwordCtrl.text,
+          data: {'username': _usernameCtrl.text.trim()},
+        );
+
+        // Supabase returns a session immediately if email confirmation
+        // is disabled. If it's enabled, session will be null here and
+        // the user needs to confirm their email first.
+      }
+
+      // ── Success — go to HomePage ──
+      if (!mounted) return;
+      Navigator.of(context).pushReplacement(
+        PageRouteBuilder(
+          pageBuilder: (_, animation, __) => const HomePage(),
+          transitionsBuilder: (_, animation, __, child) =>
+              FadeTransition(opacity: animation, child: child),
+          transitionDuration: const Duration(milliseconds: 500),
+        ),
+      );
+    } on AuthException catch (e) {
+      // Supabase gives clear messages like "Invalid login credentials"
+      _showError(e.message);
+    } catch (e) {
+      _showError('Something went wrong. Please try again.');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   // ── Input decoration helper ──
@@ -143,7 +145,6 @@ class _LoginSignupPageState extends State<LoginSignupPage>
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        // Warm dark gradient background
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [Color(0xFF1A0A00), Color(0xFF3B1F0A), Color(0xFF0F0B6D)],
@@ -158,25 +159,12 @@ class _LoginSignupPageState extends State<LoginSignupPage>
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // ── Logo & App name ──
                   _buildHeader(),
-
                   const SizedBox(height: 36),
-
-                  // ── Tab toggle ──
                   _buildToggle(),
-
                   const SizedBox(height: 28),
-
-                  // ── Form card ──
-                  FadeTransition(
-                    opacity: _fadeAnim,
-                    child: _buildForm(),
-                  ),
-
+                  FadeTransition(opacity: _fadeAnim, child: _buildForm()),
                   const SizedBox(height: 20),
-
-                  // ── Divider + social ──
                   _buildSocialSection(),
                 ],
               ),
@@ -187,12 +175,9 @@ class _LoginSignupPageState extends State<LoginSignupPage>
     );
   }
 
-  // ── Widgets ─────────────────────────────────────────────────
-
   Widget _buildHeader() {
     return Column(
       children: [
-        // Book icon in a glowing circle
         Container(
           width: 88,
           height: 88,
@@ -247,19 +232,30 @@ class _LoginSignupPageState extends State<LoginSignupPage>
       ),
       child: Row(
         children: [
-          _toggleButton("Sign In", isActive: _isLogin, onTap: () {
-            if (!_isLogin) _switchMode();
-          }),
-          _toggleButton("Sign Up", isActive: !_isLogin, onTap: () {
-            if (_isLogin) _switchMode();
-          }),
+          _toggleButton(
+            "Sign In",
+            isActive: _isLogin,
+            onTap: () {
+              if (!_isLogin) _switchMode();
+            },
+          ),
+          _toggleButton(
+            "Sign Up",
+            isActive: !_isLogin,
+            onTap: () {
+              if (_isLogin) _switchMode();
+            },
+          ),
         ],
       ),
     );
   }
 
-  Widget _toggleButton(String label,
-      {required bool isActive, required VoidCallback onTap}) {
+  Widget _toggleButton(
+    String label, {
+    required bool isActive,
+    required VoidCallback onTap,
+  }) {
     return Expanded(
       child: GestureDetector(
         onTap: onTap,
@@ -275,8 +271,7 @@ class _LoginSignupPageState extends State<LoginSignupPage>
             label,
             style: TextStyle(
               color: isActive ? const Color(0xFF1A0A00) : Colors.white60,
-              fontWeight:
-                  isActive ? FontWeight.bold : FontWeight.normal,
+              fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
               fontSize: 14,
             ),
           ),
@@ -290,7 +285,6 @@ class _LoginSignupPageState extends State<LoginSignupPage>
       key: _formKey,
       child: Column(
         children: [
-          // Username — only shown during sign-up
           if (!_isLogin) ...[
             TextFormField(
               controller: _usernameCtrl,
@@ -301,8 +295,6 @@ class _LoginSignupPageState extends State<LoginSignupPage>
             ),
             const SizedBox(height: 14),
           ],
-
-          // Email
           TextFormField(
             controller: _emailCtrl,
             keyboardType: TextInputType.emailAddress,
@@ -315,59 +307,58 @@ class _LoginSignupPageState extends State<LoginSignupPage>
             },
           ),
           const SizedBox(height: 14),
-
-          // Password
           TextFormField(
             controller: _passwordCtrl,
             obscureText: _obscurePassword,
             style: const TextStyle(color: Colors.white),
-            decoration: _inputDecoration("Password", Icons.lock_outline).copyWith(
-              suffixIcon: IconButton(
-                icon: Icon(
-                  _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                  color: Colors.white38,
-                  size: 20,
+            decoration: _inputDecoration("Password", Icons.lock_outline)
+                .copyWith(
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscurePassword
+                          ? Icons.visibility_off
+                          : Icons.visibility,
+                      color: Colors.white38,
+                      size: 20,
+                    ),
+                    onPressed: () =>
+                        setState(() => _obscurePassword = !_obscurePassword),
+                  ),
                 ),
-                onPressed: () =>
-                    setState(() => _obscurePassword = !_obscurePassword),
-              ),
-            ),
             validator: (v) {
               if (v == null || v.isEmpty) return "Enter your password";
-              if (v.length < 6) return "Password must be at least 6 characters";
+              if (v.length < 6) return "At least 6 characters";
               return null;
             },
           ),
           const SizedBox(height: 14),
-
-          // Confirm password — only on sign-up
           if (!_isLogin) ...[
             TextFormField(
               controller: _confirmCtrl,
               obscureText: _obscureConfirm,
               style: const TextStyle(color: Colors.white),
               decoration:
-                  _inputDecoration("Confirm Password", Icons.lock_outline)
-                      .copyWith(
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    _obscureConfirm ? Icons.visibility_off : Icons.visibility,
-                    color: Colors.white38,
-                    size: 20,
+                  _inputDecoration(
+                    "Confirm Password",
+                    Icons.lock_outline,
+                  ).copyWith(
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscureConfirm
+                            ? Icons.visibility_off
+                            : Icons.visibility,
+                        color: Colors.white38,
+                        size: 20,
+                      ),
+                      onPressed: () =>
+                          setState(() => _obscureConfirm = !_obscureConfirm),
+                    ),
                   ),
-                  onPressed: () =>
-                      setState(() => _obscureConfirm = !_obscureConfirm),
-                ),
-              ),
-              validator: (v) {
-                if (v != _passwordCtrl.text) return "Passwords do not match";
-                return null;
-              },
+              validator: (v) =>
+                  v != _passwordCtrl.text ? "Passwords do not match" : null,
             ),
             const SizedBox(height: 14),
           ],
-
-          // Forgot password (login only)
           if (_isLogin)
             Align(
               alignment: Alignment.centerRight,
@@ -379,10 +370,7 @@ class _LoginSignupPageState extends State<LoginSignupPage>
                 ),
               ),
             ),
-
           const SizedBox(height: 8),
-
-          // Submit button
           SizedBox(
             width: double.infinity,
             height: 52,
@@ -391,7 +379,9 @@ class _LoginSignupPageState extends State<LoginSignupPage>
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFFFD261),
                 foregroundColor: const Color(0xFF1A0A00),
-                disabledBackgroundColor: const Color(0xFFFFD261).withOpacity(0.5),
+                disabledBackgroundColor: const Color(
+                  0xFFFFD261,
+                ).withOpacity(0.5),
                 elevation: 0,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(22),
@@ -427,38 +417,36 @@ class _LoginSignupPageState extends State<LoginSignupPage>
         Row(
           children: [
             Expanded(
-                child: Divider(color: Colors.white.withOpacity(0.15), thickness: 1)),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Text(
-                "or continue with",
-                style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 12),
+              child: Divider(
+                color: Colors.white.withOpacity(0.15),
+                thickness: 1,
               ),
             ),
             Expanded(
-                child: Divider(color: Colors.white.withOpacity(0.15), thickness: 1)),
+              child: Divider(
+                color: Colors.white.withOpacity(0.15),
+                thickness: 1,
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 16),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            _socialButton(Icons.g_mobiledata_rounded, "Google"),
-            const SizedBox(width: 16),
-            _socialButton(Icons.facebook_rounded, "Facebook"),
-          ],
-        ),
+        Row(mainAxisAlignment: MainAxisAlignment.center),
         const SizedBox(height: 24),
         GestureDetector(
           onTap: _switchMode,
           child: RichText(
             text: TextSpan(
-              style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 13),
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.5),
+                fontSize: 13,
+              ),
               children: [
                 TextSpan(
-                    text: _isLogin
-                        ? "Don't have an account? "
-                        : "Already have an account? "),
+                  text: _isLogin
+                      ? "Don't have an account? "
+                      : "Already have an account? ",
+                ),
                 TextSpan(
                   text: _isLogin ? "Sign Up" : "Sign In",
                   style: const TextStyle(
@@ -471,20 +459,6 @@ class _LoginSignupPageState extends State<LoginSignupPage>
           ),
         ),
       ],
-    );
-  }
-
-  Widget _socialButton(IconData icon, String label) {
-    return OutlinedButton.icon(
-      onPressed: () {},
-      icon: Icon(icon, size: 20, color: Colors.white70),
-      label: Text(label,
-          style: const TextStyle(color: Colors.white70, fontSize: 13)),
-      style: OutlinedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-        side: BorderSide(color: Colors.white.withOpacity(0.2)),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      ),
     );
   }
 }

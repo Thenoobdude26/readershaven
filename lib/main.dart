@@ -1,8 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:readershaven/auth.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'profilepage.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Supabase.initialize(
+    url: 'https://tghjbeyxclnpsvfyepsy.supabase.co',
+    anonKey:
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRnaGpiZXl4Y2xucHN2ZnllcHN5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3NTgwODAsImV4cCI6MjA4OTMzNDA4MH0.reEecj8BDEYdZJPpL0JYMBRKp2Z5lGKpfBVPPS-Mq4U',
+  );
+  final data = await supabase.from('profiles').select();
+  print(data);
   runApp(const ReadersHaven());
 }
+
+final supabase = Supabase.instance.client;
 
 class ReadersHaven extends StatelessWidget {
   const ReadersHaven({super.key});
@@ -10,11 +23,11 @@ class ReadersHaven extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: "ReaderSHaven",
+      title: "ReadersHaven",
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF6B4226), // warm brown
+          seedColor: const Color(0xFF6B4226),
           brightness: Brightness.light,
         ),
         useMaterial3: true,
@@ -28,75 +41,14 @@ class ReadersHaven extends StatelessWidget {
         useMaterial3: true,
         fontFamily: 'Georgia',
       ),
-      home: const HomePage(),
+      home: const LoginSignupPage(),
     );
   }
 }
 
 // ─────────────────────────────────────────────────────────────
-// Sample data models
+// Genre list
 // ─────────────────────────────────────────────────────────────
-
-class Story {
-  final String title;
-  final String author;
-  final String genre;
-  final String coverColor; // placeholder for cover art
-  final double rating;
-  final bool isSpotlighted; // ReaderSHaven's random spotlight feature
-
-  const Story({
-    required this.title,
-    required this.author,
-    required this.genre,
-    required this.coverColor,
-    required this.rating,
-    this.isSpotlighted = false,
-  });
-}
-
-const List<Story> _featuredStories = [
-  Story(
-    title: "The Ember Throne",
-    author: "Lyra Ashwood",
-    genre: "Fantasy",
-    coverColor: "#B5451B",
-    rating: 4.8,
-  ),
-  Story(
-    title: "Circuits & Starlight",
-    author: "M. Chen",
-    genre: "Sci-Fi",
-    coverColor: "#1B4B8A",
-    rating: 4.5,
-  ),
-  Story(
-    title: "Letters Never Sent",
-    author: "Rosa Vega",
-    genre: "Romance",
-    coverColor: "#8A1B4B",
-    rating: 4.7,
-  ),
-];
-
-const List<Story> _spotlightStories = [
-  Story(
-    title: "A Village Forgotten",
-    author: "T. Obi",
-    genre: "Drama",
-    coverColor: "#2E7D32",
-    rating: 4.2,
-    isSpotlighted: true,
-  ),
-  Story(
-    title: "Salt & Smoke",
-    author: "Priya Nair",
-    genre: "Mystery",
-    coverColor: "#37474F",
-    rating: 4.0,
-    isSpotlighted: true,
-  ),
-];
 
 const List<String> _genres = [
   "All",
@@ -122,20 +74,17 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
-  final String _selectedGenre = "All";
   bool _isDarkMode = false;
 
   final List<Widget> _pages = const [
     _HomeContent(),
     _DiscoverPage(),
     _CommunityPage(),
-    _ProfilePage(),
+    ProfilePage(),
   ];
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
     return Scaffold(
       backgroundColor: _isDarkMode
           ? const Color(0xFF1A1A1A)
@@ -143,11 +92,11 @@ class _HomePageState extends State<HomePage> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF6B4226),
         foregroundColor: Colors.white,
-        title: Row(
+        title: const Row(
           children: [
-            const Icon(Icons.menu_book_rounded, size: 22),
-            const SizedBox(width: 8),
-            const Text(
+            Icon(Icons.menu_book_rounded, size: 22),
+            SizedBox(width: 8),
+            Text(
               "ReadersHaven",
               style: TextStyle(
                 fontWeight: FontWeight.bold,
@@ -246,7 +195,7 @@ class _HomeContent extends StatelessWidget {
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 16),
               itemCount: _genres.length,
-              separatorBuilder: (_, _) => const SizedBox(width: 8),
+              separatorBuilder: (_, __) => const SizedBox(width: 8),
               itemBuilder: (context, i) {
                 final selected = _genres[i] == "All";
                 return ChoiceChip(
@@ -255,8 +204,7 @@ class _HomeContent extends StatelessWidget {
                   selectedColor: const Color(0xFF6B4226),
                   labelStyle: TextStyle(
                     color: selected ? Colors.white : Colors.brown.shade800,
-                    fontWeight:
-                        selected ? FontWeight.bold : FontWeight.normal,
+                    fontWeight: selected ? FontWeight.bold : FontWeight.normal,
                   ),
                   backgroundColor: Colors.brown.shade100,
                   onSelected: (_) {},
@@ -265,90 +213,20 @@ class _HomeContent extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(height: 24),
-
-          // ── Featured Stories ──
-          _SectionHeader(title: "Featured", actionLabel: "See all", onTap: () {}),
-          const SizedBox(height: 12),
-          SizedBox(
-            height: 240,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: _featuredStories.length,
-              separatorBuilder: (_, _) => const SizedBox(width: 14),
-              itemBuilder: (context, i) =>
-                  _StoryCard(story: _featuredStories[i], isWide: true),
-            ),
-          ),
-
-          const SizedBox(height: 28),
-
-          // ── Spotlight (random hidden gems) ──
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Colors.brown.shade700,
-                  Colors.brown.shade400,
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: const [
-                    Icon(Icons.auto_awesome, color: Colors.amber, size: 18),
-                    SizedBox(width: 6),
-                    Text(
-                      "Hidden Gems Spotlight",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  "Randomly selected stories deserving more readers",
-                  style: TextStyle(color: Colors.white70, fontSize: 12),
-                ),
-                const SizedBox(height: 14),
-                Row(
-                  children: _spotlightStories
-                      .map((s) => Expanded(
-                            child: Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 4),
-                              child: _StoryCard(
-                                  story: s, isWide: false, onDark: true),
-                            ),
-                          ))
-                      .toList(),
-                ),
-              ],
-            ),
-          ),
-
           const SizedBox(height: 28),
 
           // ── Continue Reading ──
           _SectionHeader(
-              title: "Continue Reading", actionLabel: "My Library", onTap: () {}),
+            title: "Continue Reading",
+            actionLabel: "My Library",
+            onTap: () {},
+          ),
           const SizedBox(height: 12),
           _ContinueReadingCard(
-            title: "The Ember Throne",
-            author: "Lyra Ashwood",
-            progress: 0.62,
-            chapter: "Chapter 14: The Breaking Wall",
+            title: " ",
+            author: " ",
+            progress:  0.0,
+            chapter: " ",
             coverColor: const Color(0xFFB5451B),
           ),
 
@@ -452,131 +330,6 @@ class _SectionHeader extends StatelessWidget {
   }
 }
 
-class _StoryCard extends StatelessWidget {
-  final Story story;
-  final bool isWide;
-  final bool onDark;
-
-  const _StoryCard({
-    required this.story,
-    required this.isWide,
-    this.onDark = false,
-  });
-
-  Color _parseColor(String hex) {
-    return Color(int.parse(hex.replaceFirst('#', '0xFF')));
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final double w = isWide ? 150 : double.infinity;
-    return GestureDetector(
-      onTap: () {},
-      child: SizedBox(
-        width: isWide ? w : null,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Cover placeholder
-            Container(
-              width: isWide ? w : double.infinity,
-              height: isWide ? 180 : 120,
-              decoration: BoxDecoration(
-                color: _parseColor(story.coverColor),
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
-                    blurRadius: 6,
-                    offset: const Offset(0, 3),
-                  )
-                ],
-              ),
-              child: Stack(
-                children: [
-                  Center(
-                    child: Icon(
-                      Icons.auto_stories,
-                      color: Colors.white.withOpacity(0.3),
-                      size: isWide ? 60 : 40,
-                    ),
-                  ),
-                  Positioned(
-                    bottom: 8,
-                    left: 8,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Colors.black45,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.star,
-                              color: Colors.amber, size: 11),
-                          const SizedBox(width: 2),
-                          Text(
-                            story.rating.toString(),
-                            style: const TextStyle(
-                                color: Colors.white, fontSize: 10),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  if (story.isSpotlighted)
-                    Positioned(
-                      top: 8,
-                      right: 8,
-                      child: const Icon(Icons.auto_awesome,
-                          color: Colors.amber, size: 14),
-                    ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              story.title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 13,
-                color: onDark ? Colors.white : Colors.brown.shade900,
-              ),
-            ),
-            Text(
-              story.author,
-              style: TextStyle(
-                fontSize: 11,
-                color: onDark ? Colors.white70 : Colors.brown.shade600,
-              ),
-            ),
-            Container(
-              margin: const EdgeInsets.only(top: 3),
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-              decoration: BoxDecoration(
-                color: Colors.brown.shade200.withOpacity(onDark ? 0.3 : 1),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                story.genre,
-                style: TextStyle(
-                  fontSize: 10,
-                  color: onDark ? Colors.white : Colors.brown.shade800,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _ContinueReadingCard extends StatelessWidget {
   final String title;
   final String author;
@@ -606,7 +359,7 @@ class _ContinueReadingCard extends StatelessWidget {
               color: Colors.black.withOpacity(0.08),
               blurRadius: 8,
               offset: const Offset(0, 2),
-            )
+            ),
           ],
         ),
         child: Row(
@@ -618,24 +371,39 @@ class _ContinueReadingCard extends StatelessWidget {
                 color: coverColor,
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(Icons.auto_stories,
-                  color: Colors.white54, size: 28),
+              child: const Icon(
+                Icons.auto_stories,
+                color: Colors.white54,
+                size: 28,
+              ),
             ),
             const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title,
-                      style: const TextStyle(
-                          fontWeight: FontWeight.bold, fontSize: 15)),
-                  Text(author,
-                      style: TextStyle(
-                          color: Colors.brown.shade500, fontSize: 12)),
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                    ),
+                  ),
+                  Text(
+                    author,
+                    style: TextStyle(
+                      color: Colors.brown.shade500,
+                      fontSize: 12,
+                    ),
+                  ),
                   const SizedBox(height: 4),
-                  Text(chapter,
-                      style: TextStyle(
-                          color: Colors.brown.shade700, fontSize: 12)),
+                  Text(
+                    chapter,
+                    style: TextStyle(
+                      color: Colors.brown.shade700,
+                      fontSize: 12,
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   LinearProgressIndicator(
                     value: progress,
@@ -644,9 +412,13 @@ class _ContinueReadingCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(4),
                   ),
                   const SizedBox(height: 4),
-                  Text("${(progress * 100).toInt()}% read",
-                      style: TextStyle(
-                          color: Colors.brown.shade500, fontSize: 11)),
+                  Text(
+                    "${(progress * 100).toInt()}% read",
+                    style: TextStyle(
+                      color: Colors.brown.shade500,
+                      fontSize: 11,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -656,10 +428,13 @@ class _ContinueReadingCard extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF6B4226),
                 foregroundColor: Colors.white,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20)),
+                  borderRadius: BorderRadius.circular(20),
+                ),
               ),
               child: const Text("Continue", style: TextStyle(fontSize: 12)),
             ),
@@ -702,9 +477,10 @@ class _QuickActionButton extends StatelessWidget {
             Text(
               label,
               style: TextStyle(
-                  fontSize: 11,
-                  color: Colors.brown.shade800,
-                  fontWeight: FontWeight.w500),
+                fontSize: 11,
+                color: Colors.brown.shade800,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ],
         ),
@@ -728,11 +504,15 @@ class _DiscoverPage extends StatelessWidget {
         children: [
           Icon(Icons.explore, size: 64, color: Color(0xFF6B4226)),
           SizedBox(height: 12),
-          Text("Discover Page",
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+          Text(
+            "Discover Page",
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          ),
           SizedBox(height: 4),
-          Text("Browse all genres and new releases",
-              style: TextStyle(color: Colors.grey)),
+          Text(
+            "Browse all genres and new releases",
+            style: TextStyle(color: Colors.grey),
+          ),
         ],
       ),
     );
@@ -750,11 +530,15 @@ class _CommunityPage extends StatelessWidget {
         children: [
           Icon(Icons.forum, size: 64, color: Color(0xFF6B4226)),
           SizedBox(height: 12),
-          Text("Community Page",
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+          Text(
+            "Community Page",
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          ),
           SizedBox(height: 4),
-          Text("Chat rooms, forums, and mentorship",
-              style: TextStyle(color: Colors.grey)),
+          Text(
+            "Chat rooms, forums, and mentorship",
+            style: TextStyle(color: Colors.grey),
+          ),
         ],
       ),
     );
@@ -772,11 +556,15 @@ class _ProfilePage extends StatelessWidget {
         children: [
           Icon(Icons.person, size: 64, color: Color(0xFF6B4226)),
           SizedBox(height: 12),
-          Text("Profile Page",
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+          Text(
+            "Profile Page",
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          ),
           SizedBox(height: 4),
-          Text("Your library, commissions, and settings",
-              style: TextStyle(color: Colors.grey)),
+          Text(
+            "Your library, commissions, and settings",
+            style: TextStyle(color: Colors.grey),
+          ),
         ],
       ),
     );
