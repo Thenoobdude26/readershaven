@@ -122,7 +122,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
-  String _selectedGenre = "All";
+  final String _selectedGenre = "All";
   bool _isDarkMode = false;
 
   final List<Widget> _pages = const [
@@ -246,7 +246,7 @@ class _HomeContent extends StatelessWidget {
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 16),
               itemCount: _genres.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              separatorBuilder: (_, _) => const SizedBox(width: 8),
               itemBuilder: (context, i) {
                 final selected = _genres[i] == "All";
                 return ChoiceChip(
@@ -276,7 +276,7 @@ class _HomeContent extends StatelessWidget {
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 16),
               itemCount: _featuredStories.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 14),
+              separatorBuilder: (_, _) => const SizedBox(width: 14),
               itemBuilder: (context, i) =>
                   _StoryCard(story: _featuredStories[i], isWide: true),
             ),
