@@ -225,7 +225,7 @@ class _HomeContent extends StatelessWidget {
           _ContinueReadingCard(
             title: " ",
             author: " ",
-            progress:  0.0,
+            progress: 0.0,
             chapter: " ",
             coverColor: const Color(0xFFB5451B),
           ),
@@ -537,32 +537,6 @@ class _CommunityPage extends StatelessWidget {
           SizedBox(height: 4),
           Text(
             "Chat rooms, forums, and mentorship",
-            style: TextStyle(color: Colors.grey),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ProfilePage extends StatelessWidget {
-  const _ProfilePage();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.person, size: 64, color: Color(0xFF6B4226)),
-          SizedBox(height: 12),
-          Text(
-            "Profile Page",
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          ),
-          SizedBox(height: 4),
-          Text(
-            "Your library, commissions, and settings",
             style: TextStyle(color: Colors.grey),
           ),
         ],
