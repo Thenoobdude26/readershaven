@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import 'main.dart';
 import 'auth.dart';
+import 'edit_profile_page.dart';
 
 final supabase = Supabase.instance.client;
 
@@ -310,7 +311,7 @@ class _ProfilePageState extends State<ProfilePage>
           _buildTabBar(),
           _buildTabContent(),
           const SizedBox(height: 16),
-          _buildEditSection(),
+          const SizedBox(height: 32),
           const SizedBox(height: 32),
         ],
       ),
@@ -425,6 +426,25 @@ class _ProfilePageState extends State<ProfilePage>
             ),
           ],
           const SizedBox(height: 12),
+          ElevatedButton.icon(
+            onPressed: () async {
+              await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) =>
+                      EditProfilePage(username: _username, bio: _bio),
+                ),
+              );
+              _loadProfile(); // refresh data when returning
+            },
+            icon: const Icon(Icons.edit, size: 16),
+            label: const Text('Edit Profile'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.white.withOpacity(0.2),
+              foregroundColor: Colors.white,
+              elevation: 0,
+            ),
+          ),
           // Sign out button
           TextButton.icon(
             onPressed: _signOut,
@@ -672,128 +692,6 @@ class _ProfilePageState extends State<ProfilePage>
     );
   }
 
-  // ── Edit section ─────────────────────────────────────────────
-
-  Widget _buildEditSection() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _sectionTitle('Edit Profile'),
-          const SizedBox(height: 12),
-          _field(_usernameCtrl, 'Username', Icons.person_outline),
-          const SizedBox(height: 12),
-          _field(
-            _bioCtrl,
-            'Bio',
-            Icons.edit_note,
-            maxLines: 3,
-            hint: 'Tell readers about yourself...',
-          ),
-          const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: _isSaving ? null : _saveProfile,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF6B4226),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: _isSaving
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                      ),
-                    )
-                  : const Text(
-                      'Save Changes',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-            ),
-          ),
-          const SizedBox(height: 28),
-          _sectionTitle('Change Password'),
-          const SizedBox(height: 12),
-          _field(
-            _newPasswordCtrl,
-            'New Password',
-            Icons.lock_outline,
-            obscure: true,
-          ),
-          const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton(
-              onPressed: _isSaving ? null : _changePassword,
-              style: OutlinedButton.styleFrom(
-                foregroundColor: const Color(0xFF6B4226),
-                side: const BorderSide(color: Color(0xFF6B4226)),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: const Text(
-                'Update Password',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _sectionTitle(String title) => Text(
-    title,
-    style: TextStyle(
-      fontSize: 16,
-      fontWeight: FontWeight.bold,
-      color: Colors.brown.shade900,
-    ),
-  );
-
-  Widget _field(
-    TextEditingController ctrl,
-    String label,
-    IconData icon, {
-    int maxLines = 1,
-    bool obscure = false,
-    String? hint,
-  }) {
-    return TextField(
-      controller: ctrl,
-      maxLines: maxLines,
-      obscureText: obscure,
-      decoration: InputDecoration(
-        labelText: label,
-        hintText: hint,
-        prefixIcon: Icon(icon, color: Colors.brown.shade400, size: 20),
-        filled: true,
-        fillColor: Colors.brown.shade50,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.brown.shade200),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.brown.shade200),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF6B4226), width: 1.5),
-        ),
-      ),
-    );
-  }
 
   Widget _emptyState(IconData icon, String message) {
     return Center(
