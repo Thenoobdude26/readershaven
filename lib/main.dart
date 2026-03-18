@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:readershaven/auth.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'profilepage.dart';
+import 'profile/profilepage.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -195,7 +195,7 @@ class _HomeContent extends StatelessWidget {
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 16),
               itemCount: _genres.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              separatorBuilder: (_, _) => const SizedBox(width: 8),
               itemBuilder: (context, i) {
                 final selected = _genres[i] == "All";
                 return ChoiceChip(

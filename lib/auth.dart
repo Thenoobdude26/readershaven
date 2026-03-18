@@ -97,8 +97,8 @@ class _LoginSignupPageState extends State<LoginSignupPage>
       if (!mounted) return;
       Navigator.of(context).pushReplacement(
         PageRouteBuilder(
-          pageBuilder: (_, animation, __) => const HomePage(),
-          transitionsBuilder: (_, animation, __, child) =>
+          pageBuilder: (_, animation, _) => const HomePage(),
+          transitionsBuilder: (_, animation, _, child) =>
               FadeTransition(opacity: animation, child: child),
           transitionDuration: const Duration(milliseconds: 500),
         ),
