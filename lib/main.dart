@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:readershaven/auth.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'profile/profilepage.dart';
+import 'package:readershaven/core/constants.dart';
+import 'discover_page.dart';
+import 'librarypage.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -10,8 +13,6 @@ void main() async {
     anonKey:
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRnaGpiZXl4Y2xucHN2ZnllcHN5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3NTgwODAsImV4cCI6MjA4OTMzNDA4MH0.reEecj8BDEYdZJPpL0JYMBRKp2Z5lGKpfBVPPS-Mq4U',
   );
-  final data = await supabase.from('profiles').select();
-  print(data);
   runApp(const ReadersHaven());
 }
 
@@ -50,16 +51,16 @@ class ReadersHaven extends StatelessWidget {
 // Genre list
 // ─────────────────────────────────────────────────────────────
 
-const List<String> _genres = [
-  "All",
-  "Fantasy",
-  "Romance",
-  "Sci-Fi",
-  "Mystery",
-  "Drama",
-  "Horror",
-  "Non-Fiction",
-];
+// const List<String> _genres = [
+//   "All",
+//   "Fantasy",
+//   "Romance",
+//   "Sci-Fi",
+//   "Mystery",
+//   "Drama",
+//   "Horror",
+//   "Non-Fiction",
+// ];
 
 // ─────────────────────────────────────────────────────────────
 // Home Page
@@ -75,20 +76,45 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
   bool _isDarkMode = false;
+  String _userRole = 'reader';
+  final _scaffoldKey = GlobalKey<ScaffoldState>();
 
-  final List<Widget> _pages = const [
-    _HomeContent(),
-    _DiscoverPage(),
-    _CommunityPage(),
-    ProfilePage(),
+  List<Widget> get _pages => [
+    const _HomeContent(),
+    const DiscoverPage(),
+    const _CommunityPage(),
+    const LibraryPage(),
+    if (_userRole == 'writer' || _userRole == 'mentor') const CreateStoryPage(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserRole(); // ← just this
+  }
+
+  Future<void> _loadUserRole() async {
+    final userId = supabase.auth.currentUser?.id;
+    if (userId == null) return;
+
+    final data = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', userId)
+        .single();
+
+    if (!mounted) return;
+    setState(() => _userRole = data['role'] ?? 'reader');
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: _scaffoldKey,
       backgroundColor: _isDarkMode
           ? const Color(0xFF1A1A1A)
           : const Color(0xFFF5EFE6),
+      endDrawer: const Drawer(child: ProfilePage()),
       appBar: AppBar(
         backgroundColor: const Color(0xFF6B4226),
         foregroundColor: Colors.white,
@@ -117,6 +143,11 @@ class _HomePageState extends State<HomePage> {
             tooltip: "Notifications",
             onPressed: () {},
           ),
+          IconButton(
+            icon: const Icon(Icons.account_circle_outlined),
+            tooltip: "Profile",
+            onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
+          ),
           const SizedBox(width: 4),
         ],
       ),
@@ -127,7 +158,7 @@ class _HomePageState extends State<HomePage> {
         backgroundColor: const Color(0xFF6B4226).withOpacity(0.95),
         indicatorColor: Colors.white.withOpacity(0.2),
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-        destinations: const [
+        destinations: [
           NavigationDestination(
             icon: Icon(Icons.home_outlined, color: Colors.white70),
             selectedIcon: Icon(Icons.home, color: Colors.white),
@@ -144,10 +175,16 @@ class _HomePageState extends State<HomePage> {
             label: "Community",
           ),
           NavigationDestination(
-            icon: Icon(Icons.person_outlined, color: Colors.white70),
-            selectedIcon: Icon(Icons.person, color: Colors.white),
-            label: "Profile",
+            icon: Icon(Icons.library_books_outlined, color: Colors.white70),
+            selectedIcon: Icon(Icons.library_books, color: Colors.white),
+            label: "Library",
           ),
+          if (_userRole == 'writer' || _userRole == 'mentor')
+            const NavigationDestination(
+              icon: Icon(Icons.edit_outlined, color: Colors.white70),
+              selectedIcon: Icon(Icons.edit, color: Colors.white),
+              label: "Write",
+            ),
         ],
       ),
     );
@@ -156,10 +193,54 @@ class _HomePageState extends State<HomePage> {
 
 // ─────────────────────────────────────────────────────────────
 // Home Content Tab
+// StatefulWidget so it can load reading progress from Supabase
 // ─────────────────────────────────────────────────────────────
 
-class _HomeContent extends StatelessWidget {
+class _HomeContent extends StatefulWidget {
   const _HomeContent();
+
+  @override
+  State<_HomeContent> createState() => _HomeContentState();
+}
+
+class _HomeContentState extends State<_HomeContent> {
+  // null = still loading or no data found
+  Map<String, dynamic>? _latestProgress;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProgress();
+  }
+
+  Future<void> _loadProgress() async {
+    final userId = supabase.auth.currentUser?.id;
+    if (userId == null) {
+      setState(() => _isLoading = false);
+      return;
+    }
+
+    try {
+      // maybeSingle() returns null instead of throwing if no rows found
+      final data = await supabase
+          .from('reading_progress')
+          .select('progress, updated_at, stories(title), chapters(title)')
+          .eq('user_id', userId)
+          .order('updated_at', ascending: false)
+          .limit(1)
+          .maybeSingle();
+
+      if (!mounted) return;
+      setState(() {
+        _latestProgress = data;
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -194,12 +275,12 @@ class _HomeContent extends StatelessWidget {
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: _genres.length,
-              separatorBuilder: (_, _) => const SizedBox(width: 8),
+              itemCount: genres.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 8),
               itemBuilder: (context, i) {
-                final selected = _genres[i] == "All";
+                final selected = genres[i] == "All";
                 return ChoiceChip(
-                  label: Text(_genres[i]),
+                  label: Text(genres[i]),
                   selected: selected,
                   selectedColor: const Color(0xFF6B4226),
                   labelStyle: TextStyle(
@@ -216,69 +297,29 @@ class _HomeContent extends StatelessWidget {
           const SizedBox(height: 28),
 
           // ── Continue Reading ──
-          _SectionHeader(
-            title: "Continue Reading",
-            actionLabel: "My Library",
-            onTap: () {},
-          ),
-          const SizedBox(height: 12),
-          _ContinueReadingCard(
-            title: " ",
-            author: " ",
-            progress: 0.0,
-            chapter: " ",
-            coverColor: const Color(0xFFB5451B),
-          ),
-
-          const SizedBox(height: 28),
-
-          // ── Quick Actions ──
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Text(
-              "Quick Actions",
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.brown.shade900,
-              ),
+          // Only shown if the user has actually read something
+          if (!_isLoading && _latestProgress != null) ...[
+            _SectionHeader(
+              title: "Continue Reading",
+              actionLabel: "My Library",
+              onTap: () {},
             ),
-          ),
-          const SizedBox(height: 12),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              children: [
-                _QuickActionButton(
-                  icon: Icons.edit_outlined,
-                  label: "Write",
-                  color: Colors.deepOrange.shade400,
-                  onTap: () {},
-                ),
-                const SizedBox(width: 12),
-                _QuickActionButton(
-                  icon: Icons.handshake_outlined,
-                  label: "Commission",
-                  color: Colors.teal.shade400,
-                  onTap: () {},
-                ),
-                const SizedBox(width: 12),
-                _QuickActionButton(
-                  icon: Icons.school_outlined,
-                  label: "Mentorship",
-                  color: Colors.indigo.shade400,
-                  onTap: () {},
-                ),
-                const SizedBox(width: 12),
-                _QuickActionButton(
-                  icon: Icons.chat_bubble_outline,
-                  label: "Chat",
-                  color: Colors.pink.shade400,
-                  onTap: () {},
-                ),
-              ],
+            const SizedBox(height: 12),
+            _ContinueReadingCard(
+              title:
+                  (_latestProgress!['stories']
+                      as Map<String, dynamic>?)?['title'] ??
+                  'Unknown Story',
+              chapter:
+                  (_latestProgress!['chapters']
+                      as Map<String, dynamic>?)?['title'] ??
+                  '',
+              progress:
+                  (_latestProgress!['progress'] as num?)?.toDouble() ?? 0.0,
+              coverColor: const Color(0xFFB5451B),
             ),
-          ),
+            const SizedBox(height: 28),
+          ],
 
           const SizedBox(height: 32),
         ],
@@ -330,16 +371,16 @@ class _SectionHeader extends StatelessWidget {
   }
 }
 
+// author field removed — not stored in reading_progress
+// fetch separately if needed when navigating to story
 class _ContinueReadingCard extends StatelessWidget {
   final String title;
-  final String author;
   final double progress;
   final String chapter;
   final Color coverColor;
 
   const _ContinueReadingCard({
     required this.title,
-    required this.author,
     required this.progress,
     required this.chapter,
     required this.coverColor,
@@ -389,21 +430,16 @@ class _ContinueReadingCard extends StatelessWidget {
                       fontSize: 15,
                     ),
                   ),
-                  Text(
-                    author,
-                    style: TextStyle(
-                      color: Colors.brown.shade500,
-                      fontSize: 12,
+                  if (chapter.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      chapter,
+                      style: TextStyle(
+                        color: Colors.brown.shade700,
+                        fontSize: 12,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    chapter,
-                    style: TextStyle(
-                      color: Colors.brown.shade700,
-                      fontSize: 12,
-                    ),
-                  ),
+                  ],
                   const SizedBox(height: 8),
                   LinearProgressIndicator(
                     value: progress,
@@ -445,79 +481,9 @@ class _ContinueReadingCard extends StatelessWidget {
   }
 }
 
-class _QuickActionButton extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color color;
-  final VoidCallback onTap;
-
-  const _QuickActionButton({
-    required this.icon,
-    required this.label,
-    required this.color,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.15),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, color: color, size: 24),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 11,
-                color: Colors.brown.shade800,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 // ─────────────────────────────────────────────────────────────
 // Placeholder pages for bottom nav tabs
 // ─────────────────────────────────────────────────────────────
-
-class _DiscoverPage extends StatelessWidget {
-  const _DiscoverPage();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.explore, size: 64, color: Color(0xFF6B4226)),
-          SizedBox(height: 12),
-          Text(
-            "Discover Page",
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          ),
-          SizedBox(height: 4),
-          Text(
-            "Browse all genres and new releases",
-            style: TextStyle(color: Colors.grey),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 class _CommunityPage extends StatelessWidget {
   const _CommunityPage();
