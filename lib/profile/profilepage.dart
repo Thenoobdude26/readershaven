@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import '../auth.dart';
 import 'edit_profile_page.dart';
+import 'package:readershaven/writers/writestorypage.dart';
 
 final supabase = Supabase.instance.client;
 
@@ -79,7 +80,6 @@ class _ProfilePageState extends State<ProfilePage>
           .from('stories')
           .select('id, title, genre, created_at')
           .eq('author_id', userId)
-          .eq('is_published', true)
           .order('created_at', ascending: false);
 
       // Load reading progress
@@ -539,70 +539,81 @@ class _ProfilePageState extends State<ProfilePage>
       itemCount: _publishedStories.length,
       itemBuilder: (context, i) {
         final s = _publishedStories[i];
-        return Container(
-          margin: const EdgeInsets.only(bottom: 10),
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.06),
-                blurRadius: 6,
-                offset: const Offset(0, 2),
+        return GestureDetector(
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => WriteStoryPage(
+                storyId: s['id'],
+                storyTitle: s['title'] ?? '',
               ),
-            ],
+            ),
           ),
-          child: Row(
-            children: [
-              Container(
-                width: 44,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: Colors.brown.shade200,
-                  borderRadius: BorderRadius.circular(6),
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 10),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.06),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
                 ),
-                child: const Icon(
-                  Icons.auto_stories,
-                  color: Colors.white,
-                  size: 22,
+              ],
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: Colors.brown.shade200,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: const Icon(
+                    Icons.auto_stories,
+                    color: Colors.white,
+                    size: 22,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      s['title'] ?? '',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.brown.shade100,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        s['genre'] ?? '',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Colors.brown.shade700,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        s['title'] ?? '',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
                         ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 3),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.brown.shade100,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          s['genre'] ?? '',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.brown.shade700,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              const Icon(Icons.chevron_right, color: Colors.grey),
-            ],
+                const Icon(Icons.chevron_right, color: Colors.grey),
+              ],
+            ),
           ),
         );
       },
@@ -690,7 +701,6 @@ class _ProfilePageState extends State<ProfilePage>
       },
     );
   }
-
 
   Widget _emptyState(IconData icon, String message) {
     return Center(

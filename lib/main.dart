@@ -5,6 +5,7 @@ import 'profile/profilepage.dart';
 import 'package:readershaven/core/constants.dart';
 import 'discover_page.dart';
 import 'librarypage.dart';
+import 'writers/createStoryPage.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
