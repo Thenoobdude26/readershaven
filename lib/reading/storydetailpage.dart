@@ -37,7 +37,7 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
       // Load story details with author profile
       final story = await supabase
           .from('stories')
-          .select('id, title, description, cover_url, genre, created_at, profiles(id, username, avatar_url)')
+          .select('id, title, description, cover_url, genre, created_at, profiles!stories_author_id_fkey(username, avatar_url)')
           .eq('id', widget.storyId)
           .single();
 

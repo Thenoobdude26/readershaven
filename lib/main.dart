@@ -79,14 +79,22 @@ class _HomePageState extends State<HomePage> {
   bool _isDarkMode = false;
   String _userRole = 'reader';
   final _scaffoldKey = GlobalKey<ScaffoldState>();
+  String _searchQuery = '';
 
   List<Widget> get _pages => [
-    const _HomeContent(),
-    const DiscoverPage(),
+    _HomeContent(onSearch: _onSearch),
+    DiscoverPage(initialQuery: _searchQuery),
     const _CommunityPage(),
     const LibraryPage(),
     if (_userRole == 'writer' || _userRole == 'mentor') const CreateStoryPage(),
   ];
+
+  void _onSearch(String query) {
+    setState(() {
+      _searchQuery = query;
+      _selectedIndex = 1;
+    });
+  }
 
   @override
   void initState() {
@@ -198,7 +206,8 @@ class _HomePageState extends State<HomePage> {
 // ─────────────────────────────────────────────────────────────
 
 class _HomeContent extends StatefulWidget {
-  const _HomeContent();
+  final void Function(String query) onSearch;
+  const _HomeContent({required this.onSearch});
 
   @override
   State<_HomeContent> createState() => _HomeContentState();
@@ -254,6 +263,7 @@ class _HomeContentState extends State<_HomeContent> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: TextField(
+              onSubmitted: (query) => widget.onSearch(query),
               decoration: InputDecoration(
                 hintText: "Search stories, authors, genres…",
                 prefixIcon: const Icon(Icons.search),

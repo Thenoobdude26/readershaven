@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:readershaven/main.dart';
 import 'publishstorypage.dart';
+import 'editstorypage.dart';
 
 // ─────────────────────────────────────────────────────────────
 // Write Story Page
@@ -42,9 +43,10 @@ class _WriteStoryPageState extends State<WriteStoryPage> {
     super.initState();
     _currentChapterId = widget.chapterId;
     if (widget.chapterId != null) _loadExistingChapter();
-
-    // Auto-save every 30 seconds while typing
-    _contentCtrl.addListener(_scheduleAutoSave);
+    _loadChapters();
+    _contentCtrl.addListener(
+      _scheduleAutoSave,
+    ); // Auto-save every 30 seconds while typing
   }
 
   @override
@@ -61,6 +63,18 @@ class _WriteStoryPageState extends State<WriteStoryPage> {
     _autoSaveTimer = Timer(const Duration(seconds: 30), _saveDraft);
   }
 
+  List<Map<String, dynamic>> _chapters = [];
+
+  Future<void> _loadChapters() async {
+    final data = await supabase
+        .from('chapters')
+        .select('id, chapter_num, title')
+        .eq('story_id', widget.storyId)
+        .order('chapter_num', ascending: true);
+    if (!mounted) return;
+    setState(() => _chapters = List<Map<String, dynamic>>.from(data));
+  }
+
   Future<void> _loadExistingChapter() async {
     try {
       final data = await supabase
@@ -75,6 +89,35 @@ class _WriteStoryPageState extends State<WriteStoryPage> {
     } catch (_) {}
   }
 
+  Future<void> _loadChapterById(String chapterId) async {
+    setState(() {
+      _currentChapterId = chapterId;
+      _titleCtrl.clear();
+      _contentCtrl.clear();
+    });
+
+    final data = await supabase
+        .from('chapters')
+        .select('title, content')
+        .eq('id', chapterId)
+        .single();
+
+    if (!mounted) return;
+    setState(() {
+      _titleCtrl.text = data['title'] ?? '';
+      _contentCtrl.text = data['content'] ?? '';
+    });
+  }
+
+  void _newChapter() {
+    setState(() {
+      _currentChapterId = null;
+      _titleCtrl.clear();
+      _contentCtrl.clear();
+      _savedOnce = false;
+    });
+  }
+
   Future<void> _saveDraft() async {
     if (_contentCtrl.text.trim().isEmpty) return;
 
@@ -82,28 +125,36 @@ class _WriteStoryPageState extends State<WriteStoryPage> {
     try {
       if (_currentChapterId == null) {
         // Create new chapter
-        final chapter = await supabase.from('chapters').insert({
-          'story_id': widget.storyId,
-          'chapter_num': widget.chapterNum ?? 1,
-          'title': _titleCtrl.text.trim().isEmpty
-              ? 'Chapter ${widget.chapterNum ?? 1}'
-              : _titleCtrl.text.trim(),
-          'content': _contentCtrl.text,
-        }).select().single();
+        final chapter = await supabase
+            .from('chapters')
+            .insert({
+              'story_id': widget.storyId,
+              'chapter_num': _chapters.length + 1,
+              'title': _titleCtrl.text.trim().isEmpty
+                  ? 'Chapter ${widget.chapterNum ?? 1}'
+                  : _titleCtrl.text.trim(),
+              'content': _contentCtrl.text,
+            })
+            .select()
+            .single();
 
         _currentChapterId = chapter['id'];
       } else {
         // Update existing chapter
-        await supabase.from('chapters').update({
-          'title': _titleCtrl.text.trim().isEmpty
-              ? 'Chapter ${widget.chapterNum ?? 1}'
-              : _titleCtrl.text.trim(),
-          'content': _contentCtrl.text,
-        }).eq('id', _currentChapterId!);
+        await supabase
+            .from('chapters')
+            .update({
+              'title': _titleCtrl.text.trim().isEmpty
+                  ? 'Chapter ${widget.chapterNum ?? 1}'
+                  : _titleCtrl.text.trim(),
+              'content': _contentCtrl.text,
+            })
+            .eq('id', _currentChapterId!);
       }
 
       if (!mounted) return;
       setState(() => _savedOnce = true);
+      await _loadChapters();
       _showSnack('Draft saved');
     } catch (e) {
       _showSnack('Failed to save: $e', isError: true);
@@ -127,19 +178,25 @@ class _WriteStoryPageState extends State<WriteStoryPage> {
     _contentCtrl.value = TextEditingValue(
       text: newText,
       selection: TextSelection.collapsed(
-        offset: selection.start + prefix.length + selectedText.length + suffix.length,
+        offset:
+            selection.start +
+            prefix.length +
+            selectedText.length +
+            suffix.length,
       ),
     );
   }
 
   void _showSnack(String msg, {bool isError = false}) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(msg),
-      backgroundColor: isError ? Colors.redAccent : const Color(0xFF6B4226),
-      behavior: SnackBarBehavior.floating,
-      duration: const Duration(seconds: 2),
-    ));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: isError ? Colors.redAccent : const Color(0xFF6B4226),
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 
   @override
@@ -170,12 +227,18 @@ class _WriteStoryPageState extends State<WriteStoryPage> {
                     width: 14,
                     height: 14,
                     child: CircularProgressIndicator(
-                        strokeWidth: 2, color: Color(0xFF6B4226)),
+                      strokeWidth: 2,
+                      color: Color(0xFF6B4226),
+                    ),
                   ),
                   const SizedBox(width: 4),
-                  Text('Saving...',
-                      style: TextStyle(
-                          fontSize: 12, color: Colors.brown.shade400)),
+                  Text(
+                    'Saving...',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.brown.shade400,
+                    ),
+                  ),
                 ],
               ),
             )
@@ -185,15 +248,57 @@ class _WriteStoryPageState extends State<WriteStoryPage> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.check_circle,
-                      size: 14, color: Colors.green.shade400),
+                  Icon(
+                    Icons.check_circle,
+                    size: 14,
+                    color: Colors.green.shade400,
+                  ),
                   const SizedBox(width: 4),
-                  Text('Saved',
-                      style: TextStyle(
-                          fontSize: 12, color: Colors.brown.shade400)),
+                  Text(
+                    'Saved',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.brown.shade400,
+                    ),
+                  ),
                 ],
               ),
             ),
+          IconButton(
+            icon: const Icon(Icons.tune),
+            tooltip: 'Edit story details',
+            onPressed: () async {
+              // first load the story details
+              final story = await supabase
+                  .from('stories')
+                  .select(
+                    'title, description, genre, language, audience_rating',
+                  )
+                  .eq('id', widget.storyId)
+                  .single();
+
+              if (!mounted) return;
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => EditStoryPage(
+                    storyId: widget.storyId,
+                    title: story['title'] ?? '',
+                    description: story['description'] ?? '',
+                    genre: story['genre'] ?? 'Fantasy',
+                    language: story['language'] ?? 'English',
+                    audienceRating: story['audience_rating'] ?? 'Everyone',
+                  ),
+                ),
+              );
+            },
+          ),
+          //chapters
+          IconButton(
+            icon: const Icon(Icons.list),
+            tooltip: 'Chapters',
+            onPressed: _showChaptersSheet,
+          ),
           // Manual save
           IconButton(
             icon: const Icon(Icons.save_outlined),
@@ -219,10 +324,13 @@ class _WriteStoryPageState extends State<WriteStoryPage> {
                 foregroundColor: Colors.white,
                 elevation: 0,
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20)),
+                  borderRadius: BorderRadius.circular(20),
+                ),
               ),
-              child: const Text('Publish →',
-                  style: TextStyle(fontWeight: FontWeight.bold)),
+              child: const Text(
+                'Publish →',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
           ),
         ],
@@ -271,14 +379,13 @@ class _WriteStoryPageState extends State<WriteStoryPage> {
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
             child: TextField(
               controller: _titleCtrl,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               decoration: InputDecoration(
                 hintText: 'Chapter title...',
                 hintStyle: TextStyle(
-                    color: Colors.brown.shade300, fontWeight: FontWeight.normal),
+                  color: Colors.brown.shade300,
+                  fontWeight: FontWeight.normal,
+                ),
                 border: InputBorder.none,
               ),
             ),
@@ -300,9 +407,85 @@ class _WriteStoryPageState extends State<WriteStoryPage> {
                 decoration: InputDecoration(
                   hintText: 'Once upon a time...',
                   hintStyle: TextStyle(
-                      color: Colors.brown.shade300, fontSize: 17, height: 1.8),
+                    color: Colors.brown.shade300,
+                    fontSize: 17,
+                    height: 1.8,
+                  ),
                   border: InputBorder.none,
                 ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showChaptersSheet() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            margin: const EdgeInsets.symmetric(vertical: 12),
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Colors.grey.shade300,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const Text(
+            'Chapters',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          ),
+          const SizedBox(height: 8),
+          Flexible(
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: _chapters.length,
+              itemBuilder: (_, i) {
+                final ch = _chapters[i];
+                return ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: Colors.brown.shade100,
+                    child: Text(
+                      '${ch['chapter_num']}',
+                      style: TextStyle(
+                        color: Colors.brown.shade700,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  title: Text(ch['title'] ?? 'Chapter ${ch['chapter_num']}'),
+                  trailing: _currentChapterId == ch['id']
+                      ? const Icon(Icons.edit, color: Color(0xFF6B4226))
+                      : null,
+                  onTap: () {
+                    Navigator.pop(context);
+                    _loadChapterById(ch['id']);
+                  },
+                );
+              },
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: ElevatedButton.icon(
+              onPressed: () {
+                Navigator.pop(context);
+                _newChapter();
+              },
+              icon: const Icon(Icons.add),
+              label: const Text('New Chapter'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF6B4226),
+                foregroundColor: Colors.white,
+                minimumSize: const Size(double.infinity, 48),
               ),
             ),
           ),

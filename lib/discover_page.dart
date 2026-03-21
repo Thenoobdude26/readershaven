@@ -5,7 +5,8 @@ import 'package:readershaven/core/constants.dart';
 import 'reading/storydetailpage.dart';
 
 class DiscoverPage extends StatefulWidget {
-  const DiscoverPage({super.key});
+  final String? initialQuery;
+  const DiscoverPage({super.key, this.initialQuery});
 
   @override
   State<DiscoverPage> createState() => _DiscoverPageState();
@@ -21,6 +22,9 @@ class _DiscoverPageState extends State<DiscoverPage> {
   @override
   void initState() {
     super.initState();
+    if (widget.initialQuery != null) {
+      _searchCtrl.text = widget.initialQuery!;
+    }
     _loadStories();
     _searchCtrl.addListener(_applyFilters);
   }
@@ -38,7 +42,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
       final data = await supabase
           .from('stories')
           .select(
-            'id, title,description,cover_url,genre,created_at, profiles(username)',
+            'id, title, description, cover_url, genre, created_at, profiles!stories_author_id_fkey(username)',
           )
           .eq('is_published', true)
           .order('created_at', ascending: false);

@@ -467,8 +467,9 @@ class _ProfilePageState extends State<ProfilePage>
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
+          if (_role == 'writer' || _role == 'mentor') ...[
           _statItem(_publishedStories.length.toString(), 'Stories'),
-          _divider(),
+          _divider(),],
           _statItem(_followerCount.toString(), 'Followers'),
           _divider(),
           _statItem(_followingCount.toString(), 'Following'),
