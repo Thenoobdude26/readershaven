@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:readershaven/main.dart';
 import 'package:readershaven/core/constants.dart';
-import 'reading/storydetailpage.dart';
+import '../reading/storydetailpage.dart';
 
 class DiscoverPage extends StatefulWidget {
   final String? initialQuery;
