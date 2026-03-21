@@ -78,7 +78,7 @@ class _ProfilePageState extends State<ProfilePage>
       // Load published stories
       final stories = await supabase
           .from('stories')
-          .select('id, title, genre, created_at')
+          .select('id, title, genre, created_at, is_draft, is_published')
           .eq('author_id', userId)
           .order('created_at', ascending: false);
 
@@ -532,7 +532,7 @@ class _ProfilePageState extends State<ProfilePage>
 
   Widget _buildStoriesList() {
     if (_publishedStories.isEmpty) {
-      return _emptyState(Icons.auto_stories, "No published stories yet");
+      return _emptyState(Icons.auto_stories, "No stories yet — start writing!");
     }
     return ListView.builder(
       padding: const EdgeInsets.all(16),
@@ -605,6 +605,28 @@ class _ProfilePageState extends State<ProfilePage>
                           style: TextStyle(
                             fontSize: 11,
                             color: Colors.brown.shade700,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: (s['is_draft'] == true)
+                              ? Colors.orange.shade100
+                              : Colors.green.shade100,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          (s['is_draft'] == true) ? 'Draft' : 'Published',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: (s['is_draft'] == true)
+                                ? Colors.orange.shade700
+                                : Colors.green.shade700,
                           ),
                         ),
                       ),
