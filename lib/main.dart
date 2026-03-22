@@ -7,7 +7,7 @@ import 'homescreenpages/discover_page.dart';
 import 'homescreenpages/librarypage.dart';
 import 'writers/createStoryPage.dart';
 import 'community/communitypage.dart';
-import 'community/communitypage.dart';
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,31 +21,38 @@ void main() async {
 
 final supabase = Supabase.instance.client;
 
+// Global notifier so any widget can toggle dark mode
+final darkModeNotifier = ValueNotifier<bool>(false);
+
 class ReadersHaven extends StatelessWidget {
   const ReadersHaven({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: "ReadersHaven",
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF6B4226),
-          brightness: Brightness.light,
+    return ValueListenableBuilder<bool>(
+      valueListenable: darkModeNotifier,
+      builder: (_, isDark, _) => MaterialApp(
+        title: "ReadersHaven",
+        debugShowCheckedModeBanner: false,
+        themeMode: isDark ? ThemeMode.dark : ThemeMode.light,
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: const Color(0xFF6B4226),
+            brightness: Brightness.light,
+          ),
+          useMaterial3: true,
+          fontFamily: 'Georgia',
         ),
-        useMaterial3: true,
-        fontFamily: 'Georgia',
-      ),
-      darkTheme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF6B4226),
-          brightness: Brightness.dark,
+        darkTheme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: const Color(0xFF6B4226),
+            brightness: Brightness.dark,
+          ),
+          useMaterial3: true,
+          fontFamily: 'Georgia',
         ),
-        useMaterial3: true,
-        fontFamily: 'Georgia',
+        home: const LoginSignupPage(),
       ),
-      home: const LoginSignupPage(),
     );
   }
 }
@@ -147,7 +154,10 @@ class _HomePageState extends State<HomePage> {
           IconButton(
             icon: Icon(_isDarkMode ? Icons.light_mode : Icons.dark_mode),
             tooltip: "Toggle dark mode",
-            onPressed: () => setState(() => _isDarkMode = !_isDarkMode),
+            onPressed: () {
+              setState(() => _isDarkMode = !_isDarkMode);
+              darkModeNotifier.value = _isDarkMode;
+            },
           ),
           IconButton(
             icon: const Icon(Icons.notifications_outlined),

@@ -334,7 +334,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
                           itemCount: _stories.length,
-                          separatorBuilder: (_, __) =>
+                          separatorBuilder: (_, _) =>
                               const SizedBox(height: 10),
                           itemBuilder: (context, i) {
                             final s = _stories[i];

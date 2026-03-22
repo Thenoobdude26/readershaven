@@ -51,33 +51,31 @@ class _CommunityPageState extends State<CommunityPage> {
   }
 
   Future<void> _loadPosts() async {
+    setState(() => _isLoading = true);
     try {
       final data = await supabase
-          .from('forum_posts_with_counts')
-          .select()
+          .from('forum_posts')
+          .select(
+            'id, title, body, tag, upvotes, created_at, author_id, profiles!forum_posts_author_id_fkey(id, username, avatar_url)',
+          )
           .order('created_at', ascending: false);
-
-      // fetch author profiles separately
-      final postsWithProfiles = await Future.wait(
-        (data as List).map((post) async {
-          final profile = await supabase
-              .from('profiles')
-              .select('id, username, avatar_url')
-              .eq('id', post['author_id'])
-              .maybeSingle();
-          return {...post, 'profiles': profile};
-        }),
-      );
 
       if (!mounted) return;
       setState(() {
-        _posts = List<Map<String, dynamic>>.from(postsWithProfiles);
+        _posts = List<Map<String, dynamic>>.from(data);
         _filteredPosts = _posts;
         _isLoading = false;
       });
     } catch (e) {
       if (!mounted) return;
       setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to load posts: \$e'),
+          backgroundColor: Colors.redAccent,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 
@@ -204,7 +202,7 @@ class _CommunityPageState extends State<CommunityPage> {
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 itemCount: _tags.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 8),
+                separatorBuilder: (_, _) => const SizedBox(width: 8),
                 itemBuilder: (_, i) {
                   final selected = _tags[i] == _selectedTag;
                   return ChoiceChip(
@@ -254,7 +252,7 @@ class _CommunityPageState extends State<CommunityPage> {
                                 padding: const EdgeInsets.fromLTRB(
                                     16, 0, 16, 80),
                                 itemCount: _filteredPosts.length,
-                                separatorBuilder: (_, __) =>
+                                separatorBuilder: (_, _) =>
                                     const SizedBox(height: 10),
                                 itemBuilder: (_, i) =>
                                     _buildPostCard(_filteredPosts[i]),

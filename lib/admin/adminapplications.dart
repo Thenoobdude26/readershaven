@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:readershaven/main.dart';
 
 // ─────────────────────────────────────────────────────────────
@@ -158,7 +157,7 @@ class _AdminApplicationsTabState extends State<AdminApplicationsTab> {
                       child: ListView.separated(
                         padding: const EdgeInsets.all(16),
                         itemCount: _applications.length,
-                        separatorBuilder: (_, __) =>
+                        separatorBuilder: (_, _) =>
                             const SizedBox(height: 10),
                         itemBuilder: (_, i) =>
                             _buildApplicationCard(_applications[i]),

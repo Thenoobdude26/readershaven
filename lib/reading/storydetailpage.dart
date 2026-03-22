@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:readershaven/main.dart';
+import 'package:readershaven/profile/publicuserprofile.dart';
 import 'readingpage.dart';
 
 // ─────────────────────────────────────────────────────────────
@@ -37,7 +38,7 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
       // Load story details with author profile
       final story = await supabase
           .from('stories')
-          .select('id, title, description, cover_url, genre, created_at, profiles!stories_author_id_fkey(username, avatar_url)')
+          .select('id, title, description, cover_url, genre, created_at, author_id, profiles!stories_author_id_fkey(username, avatar_url)')
           .eq('id', widget.storyId)
           .single();
 
@@ -171,27 +172,41 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
                       ),
                       const SizedBox(height: 8),
                       // Author row
-                      Row(
-                        children: [
-                          CircleAvatar(
-                            radius: 16,
-                            backgroundColor: Colors.brown.shade200,
-                            backgroundImage: author?['avatar_url'] != null
-                                ? NetworkImage(author!['avatar_url'])
-                                : null,
-                            child: author?['avatar_url'] == null
-                                ? const Icon(Icons.person, size: 16, color: Colors.white)
-                                : null,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            author?['username'] ?? 'Unknown',
-                            style: TextStyle(
-                              color: Colors.brown.shade600,
-                              fontWeight: FontWeight.w500,
+                      GestureDetector(
+                        onTap: () {
+                          final authorId = _story!['author_id'] as String?;
+                          if (authorId != null) {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => UserProfilePage(userId: authorId),
+                              ),
+                            );
+                          }
+                        },
+                        child: Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 16,
+                              backgroundColor: Colors.brown.shade200,
+                              backgroundImage: author?['avatar_url'] != null
+                                  ? NetworkImage(author!['avatar_url'])
+                                  : null,
+                              child: author?['avatar_url'] == null
+                                  ? const Icon(Icons.person, size: 16, color: Colors.white)
+                                  : null,
                             ),
-                          ),
-                        ],
+                            const SizedBox(width: 8),
+                            Text(
+                              author?['username'] ?? 'Unknown',
+                              style: TextStyle(
+                                color: Colors.brown.shade600,
+                                fontWeight: FontWeight.w500,
+                                decoration: TextDecoration.underline,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                       const SizedBox(height: 16),
                       // Stats row

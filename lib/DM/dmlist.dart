@@ -120,7 +120,7 @@ class _DmListPageState extends State<DmListPage> {
           : ListView.separated(
               padding: const EdgeInsets.all(16),
               itemCount: _conversations.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 10),
+              separatorBuilder: (_, _) => const SizedBox(height: 10),
               itemBuilder: (context, i) {
                 final user = _conversations[i];
                 return GestureDetector(

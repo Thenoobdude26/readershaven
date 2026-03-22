@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:readershaven/main.dart';
 
 // ─────────────────────────────────────────────────────────────
@@ -233,7 +232,7 @@ class _AdminContentTabState extends State<AdminContentTab>
                   child: ListView.separated(
                     padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
                     itemCount: _filteredStories.length,
-                    separatorBuilder: (_, __) =>
+                    separatorBuilder: (_, _) =>
                         const SizedBox(height: 8),
                     itemBuilder: (_, i) =>
                         _buildStoryCard(_filteredStories[i]),
@@ -276,7 +275,7 @@ class _AdminContentTabState extends State<AdminContentTab>
                   child: ListView.separated(
                     padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
                     itemCount: _filteredPosts.length,
-                    separatorBuilder: (_, __) =>
+                    separatorBuilder: (_, _) =>
                         const SizedBox(height: 8),
                     itemBuilder: (_, i) =>
                         _buildPostCard(_filteredPosts[i]),
