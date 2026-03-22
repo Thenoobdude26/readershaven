@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:readershaven/main.dart';
 import 'publishstorypage.dart';
 import 'editstorypage.dart';

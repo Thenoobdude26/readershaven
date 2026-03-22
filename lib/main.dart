@@ -3,9 +3,11 @@ import 'package:readershaven/auth.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'profile/profilepage.dart';
 import 'package:readershaven/core/constants.dart';
-import 'UI/discover_page.dart';
-import 'UI/librarypage.dart';
+import 'homescreenpages/discover_page.dart';
+import 'homescreenpages/librarypage.dart';
 import 'writers/createStoryPage.dart';
+import 'community/communitypage.dart';
+import 'community/communitypage.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -84,7 +86,7 @@ class _HomePageState extends State<HomePage> {
   List<Widget> get _pages => [
     _HomeContent(onSearch: _onSearch),
     DiscoverPage(initialQuery: _searchQuery),
-    const _CommunityPage(),
+    const CommunityPage(),
     const LibraryPage(),
     if (_userRole == 'writer' || _userRole == 'mentor') const CreateStoryPage(),
   ];
@@ -287,7 +289,7 @@ class _HomeContentState extends State<_HomeContent> {
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 16),
               itemCount: genres.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              separatorBuilder: (_, _) => const SizedBox(width: 8),
               itemBuilder: (context, i) {
                 final selected = genres[i] == "All";
                 return ChoiceChip(
@@ -495,29 +497,3 @@ class _ContinueReadingCard extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────
 // Placeholder pages for bottom nav tabs
 // ─────────────────────────────────────────────────────────────
-
-class _CommunityPage extends StatelessWidget {
-  const _CommunityPage();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.forum, size: 64, color: Color(0xFF6B4226)),
-          SizedBox(height: 12),
-          Text(
-            "Community Page",
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          ),
-          SizedBox(height: 4),
-          Text(
-            "Chat rooms, forums, and mentorship",
-            style: TextStyle(color: Colors.grey),
-          ),
-        ],
-      ),
-    );
-  }
-}

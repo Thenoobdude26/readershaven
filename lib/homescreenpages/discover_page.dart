@@ -120,7 +120,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
         itemCount: genres.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        separatorBuilder: (_, _) => const SizedBox(width: 8),
         itemBuilder: (_, i) {
           final selected = genres[i] == _selectedGenre;
           return ChoiceChip(

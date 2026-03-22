@@ -279,7 +279,7 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
                           itemCount: _chapters.length,
-                          separatorBuilder: (_, __) => Divider(
+                          separatorBuilder: (_, _) => Divider(
                             color: Colors.brown.shade100,
                             height: 1,
                           ),

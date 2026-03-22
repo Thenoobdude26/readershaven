@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import '../auth.dart';
 import 'edit_profile_page.dart';
 import 'package:readershaven/writers/writestorypage.dart';
+import 'package:readershaven/admin/admindashboard.dart';
 
 final supabase = Supabase.instance.client;
 
@@ -33,6 +34,7 @@ class _ProfilePageState extends State<ProfilePage>
   int _followingCount = 0;
   bool _isLoading = true;
   bool _isSaving = false;
+  bool _isAdmin = false;
 
   // Edit controllers
   final _usernameCtrl = TextEditingController();
@@ -124,6 +126,7 @@ class _ProfilePageState extends State<ProfilePage>
         _usernameCtrl.text = _username;
         _bioCtrl.text = _bio;
         _isLoading = false;
+        _isAdmin = profile['is_admin'] == true;
         _applicationStatus = applications.isNotEmpty ? 'pending' : '';
       });
     } catch (e) {
@@ -393,7 +396,22 @@ class _ProfilePageState extends State<ProfilePage>
             ),
           ),
           const SizedBox(height: 8),
-
+          if (_isAdmin) ...[
+            ElevatedButton.icon(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const AdminDashboardPage()),
+              ),
+              icon: const Icon(Icons.admin_panel_settings, size: 16),
+              label: const Text('Admin Dashboard'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFFFD261),
+                foregroundColor: const Color(0xFF1A0A00),
+                elevation: 0,
+              ),
+            ),
+            const SizedBox(height: 4),
+          ],
           // Apply button — only show if reader or writer, and no pending application
           if (_role != 'mentor' && _applicationStatus != 'pending')
             TextButton(
@@ -468,8 +486,9 @@ class _ProfilePageState extends State<ProfilePage>
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           if (_role == 'writer' || _role == 'mentor') ...[
-          _statItem(_publishedStories.length.toString(), 'Stories'),
-          _divider(),],
+            _statItem(_publishedStories.length.toString(), 'Stories'),
+            _divider(),
+          ],
           _statItem(_followerCount.toString(), 'Followers'),
           _divider(),
           _statItem(_followingCount.toString(), 'Following'),
