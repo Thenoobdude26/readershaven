@@ -1,10 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-
 void main() {
-  // ─────────────────────────────────────────────────────────────
-  // Genre Filter Tests
-  // ─────────────────────────────────────────────────────────────
-
+  // Genre Filter Test
   group('Genre Filter', () {
     final stories = [
       {'title': 'Wings of a Hunter', 'genre': 'Fantasy'},
@@ -38,7 +34,6 @@ void main() {
 
       expect(filtered.isEmpty, true);
     });
-
     test('search filter matches by title', () {
       const query = 'wings';
       final filtered = stories.where((s) {
@@ -48,7 +43,6 @@ void main() {
       expect(filtered.length, 1);
       expect(filtered.first['title'], 'Wings of a Hunter');
     });
-
     test('search filter is case insensitive', () {
       const query = 'LOVE';
       final filtered = stories.where((s) {
@@ -58,7 +52,6 @@ void main() {
       expect(filtered.length, 1);
     });
   });
-
   // ─────────────────────────────────────────────────────────────
   // Reading Progress Tests
   // ─────────────────────────────────────────────────────────────
