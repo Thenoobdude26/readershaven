@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:readershaven/main.dart';
 import 'package:readershaven/profile/publicuserprofile.dart';
 import 'readingpage.dart';
