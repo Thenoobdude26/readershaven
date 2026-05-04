@@ -16,7 +16,7 @@ class _DiscoverPageState extends State<DiscoverPage> {
   List<Map<String, dynamic>> _filtered = [];
   bool _isLoading = true;
   String _selectedGenre = 'All';
-  final _searchCtrl = TextEditingController();
+  final _searchCtrl = TextEditingController(); 
 
   @override
   void initState() {

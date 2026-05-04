@@ -1,11 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:readershaven/main.dart';
 
-// ─────────────────────────────────────────────────────────────
-// Admin Content Tab
-// View and delete stories and forum posts
-// ─────────────────────────────────────────────────────────────
-
 class AdminContentTab extends StatefulWidget {
   const AdminContentTab({super.key});
 
